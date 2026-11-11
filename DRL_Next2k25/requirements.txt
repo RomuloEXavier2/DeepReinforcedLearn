@@ -1,10 +1,5 @@
 numpy
-scipy
 matplotlib
-Pillow
-tensorflow  # ou torch, se preferir PyTorch
-gym  # Para ambientes de Reinforcement Learning
-stable-baselines3 # Uma boa biblioteca para DRL
-deppack3d # Se o DeepPack3D estiver disponível via pip
-# Caso o deppack3d não esteja no PyPI, você precisará clonar o repositório e instalá-lo localmente
-# Exemplo: git+https://github.com/seu_usuario/deppack3d.git
+torch
+gymnasium
+stable-baselines3>=2.0

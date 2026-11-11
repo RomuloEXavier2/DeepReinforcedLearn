@@ -79,4 +79,4 @@ class ImprovedDQNAgent:
         if self.epsilon>self.epsilon_min: self.epsilon*=self.epsilon_decay
     def update_target_network(self): self.target_network.load_state_dict(self.q_network.state_dict())
     def save_model(self, filepath): torch.save({'q_network_state_dict': self.q_network.state_dict()}, filepath)
-    def load_model(self, filepath): checkpoint=torch.load(filepath,weights_only=True); self.q_network.load_state_dict(checkpoint['q_network_state_dict']); self.update_target_network()
+    def load_model(self, filepath): checkpoint=torch.load(filepath,map_location=self.device,weights_only=True); self.q_network.load_state_dict(checkpoint['q_network_state_dict']); self.update_target_network()

@@ -125,3 +125,71 @@ class PalletizingEnvironment:
             self.ax.text(-dx - 1, 0, dz + 1, "Próxima Caixa", color='red')
         plt.draw();
         plt.pause(0.01)
+
+# ---------------------------------------------------------------------------
+# Wrapper Gymnasium — usado pelos scripts PPO (train_ppo.py, evaluate_ppo.py,
+# run_project.py). Mantém exatamente a mesma física/recompensa do ambiente
+# acima, apenas expõe a API padrão (reset -> obs, info / step -> 5 valores).
+# ---------------------------------------------------------------------------
+try:
+    import gymnasium as gym
+    from gymnasium import spaces
+
+    class PalletizingEnv(gym.Env):
+        metadata = {"render_modes": ["human"]}
+
+        def __init__(self, pallet_size=(5, 5), max_height=5, item_list=None, lookahead_k=3):
+            super().__init__()
+            self.core = PalletizingEnvironment(pallet_size, max_height, item_list, lookahead_k)
+            n_actions = pallet_size[0] * pallet_size[1] * max_height
+            obs_size = len(self.core.get_state())
+            high = float(max(max_height, *pallet_size))
+            self.action_space = spaces.Discrete(n_actions)
+            self.observation_space = spaces.Box(low=-1.0, high=high, shape=(obs_size,), dtype=np.float32)
+
+        # atalhos usados pelos scripts de avaliação
+        @property
+        def pallet(self):
+            return self.core.pallet
+
+        @property
+        def boxes_placed(self):
+            return self.core.boxes_placed
+
+        @property
+        def max_boxes(self):
+            return self.core.max_boxes
+
+        def reset(self, seed=None, options=None):
+            super().reset(seed=seed)
+            if seed is not None:
+                random.seed(seed)
+                np.random.seed(seed)
+            return self.core.reset(), {}
+
+        def step(self, action):
+            obs, reward, done, info = self.core.step(int(action))
+            truncated = self.core.step_count >= self.core.max_steps and bool(self.core.current_box)
+            terminated = done and not truncated
+            return obs, float(reward), terminated, truncated, info
+
+        def render(self):
+            self.core.render()
+
+        def action_masks(self):
+            """Máscara de ações válidas (compatível com MaskablePPO do sb3-contrib)."""
+            mask = np.zeros(self.action_space.n, dtype=bool)
+            box = self.core.current_box
+            if not box:
+                return mask
+            C, L, A = box
+            orients = set([(C, L, A), (L, C, A), (C, A, L), (A, C, L), (L, A, C), (A, L, C)])
+            px, py = self.core.pallet_size
+            h = self.core.max_height
+            for idx in range(self.action_space.n):
+                x, y, z = idx // (py * h), (idx % (py * h)) // h, idx % h
+                if any(self.core.is_valid_placement(x, y, z, o) for o in orients):
+                    mask[idx] = True
+            return mask
+except ImportError:  # gymnasium é opcional para o fluxo DQN
+    pass

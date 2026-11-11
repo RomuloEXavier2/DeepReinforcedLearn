@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baseline_3.common.callbacks import CheckpointCallback, EvalCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from environment import PalletizingEnv
 
 # --- Configurações do Treinamento ---
